@@ -206,10 +206,10 @@ def get_llm_proxy(base=None, key=None):
         return urls[i % len(urls)]
     code = _egress_code(base, key)
     if code is None or (code not in (451, 403)):
-        _PX_CACHE[ck] = (now, [], 0)
+        _PX_CACHE[ck] = [now, [], 0]
         return ""
     urls = _hunt_proxy(base, key)
-    _PX_CACHE[ck] = (now, urls, 1 if urls else 0)
+    _PX_CACHE[ck] = [now, urls, 1 if urls else 0]
     if urls:
         logger.info("llm proxy pool for %s: %d proxies", base, len(urls))
     else:
