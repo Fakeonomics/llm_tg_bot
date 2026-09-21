@@ -549,7 +549,10 @@ def _try_fast(text: str, transcript: str):
                       {"role": "user", "content": content}],
             temperature=0.2)
         out = ((r.choices[0].message.content) or "").strip()
-        if out and "NEED_TOOLS" not in out.upper():
+        t = out.upper().strip().strip("`\"'")
+        if out and not (t == "NEED_TOOLS"
+                        or t.startswith("NEED_TOOLS\n")
+                        or t.startswith("NEED_TOOLS ")):
             return out
         return None
     except Exception:

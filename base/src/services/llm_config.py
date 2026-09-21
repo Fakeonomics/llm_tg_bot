@@ -182,10 +182,11 @@ def _egress_code(base: str, key: str, px: str = "",
 
 
 def get_llm_proxy(base=None, key=None):
-    """Egress proxy ONLY when direct is geo-blocked (451/403).
+    """Egress proxy pool ONLY when direct is geo-blocked (451/403).
 
-    Flow: LLM_PROXY pin -> localhost (never) -> cached mode -> direct
-    probe (fast) -> proxy hunt (rare, cached 5 min). Returns url or "".
+    Flow: LLM_PROXY pin -> localhost (never) -> fresh pool (round-robin)
+    -> direct probe (fast) -> hunt up to 3 working (cached 5 min).
+    Single flaky proxy can no longer wedge all calls. Returns url or "".
     """
     import time as _tm
     env = (os.getenv("LLM_PROXY", "") or "").strip()
@@ -199,24 +200,25 @@ def get_llm_proxy(base=None, key=None):
     now = _tm.monotonic()
     ck = base + "|" + (key[-8:] if key else "")
     ent = _PX_CACHE.get(ck)
-    if ent and now - ent[0] < 300:
-        return ent[1]
+    if ent and now - ent[0] < 300 and ent[1]:
+        urls, i = ent[1], ent[2]
+        ent[2] = i + 1
+        return urls[i % len(urls)]
     code = _egress_code(base, key)
     if code is None or (code not in (451, 403)):
-        _PX_CACHE[ck] = (now, "")
+        _PX_CACHE[ck] = (now, [], 0)
         return ""
-    url = _hunt_proxy(base, key)
-    _PX_CACHE[ck] = (now, url)
-    if url:
-        logger.info("llm proxy ok for %s: %s", base,
-                    url.rsplit("@", 1)[-1][:40])
+    urls = _hunt_proxy(base, key)
+    _PX_CACHE[ck] = (now, urls, 1 if urls else 0)
+    if urls:
+        logger.info("llm proxy pool for %s: %d proxies", base, len(urls))
     else:
         logger.warning("llm proxy hunt failed for %s", base)
-    return url
+    return urls[0] if urls else ""
 
 
-def _hunt_proxy(base: str, key: str) -> str:
-    """Fetch public http lists, keep first proxy with clean egress."""
+def _hunt_proxy(base: str, key: str) -> list:
+    """Fetch public http lists, keep up to 3 with clean egress."""
     cands = []
     try:
         import urllib.request as _u
@@ -241,11 +243,14 @@ def _hunt_proxy(base: str, key: str) -> str:
         pass
     import random as _rnd
     _rnd.shuffle(cands)
-    for px in cands[:8]:
-        code = _egress_code(base, key, px, timeout=6)
+    good = []
+    for px in cands[:15]:
+        code = _egress_code(base, key, px, timeout=5)
         if code is not None and code not in (451, 403):
-            return px
-    return ""
+            good.append(px)
+            if len(good) >= 3:
+                break
+    return good
 
 
 def make_openai(timeout=120, async_=False, base=None, key=None):
@@ -337,13 +342,15 @@ def persist(base: str, api_key: str, model: str) -> None:
 
 
 def current_proxy():
-    """Recorded proxy url or '' (direct mode). No network."""
+    """First recorded proxy url or '' (direct mode). No network."""
     try:
         b, k, _ = get_active()
         if _is_local_base(b):
             return ""
         ent = _PX_CACHE.get(b + "|" + (k[-8:] if k else ""))
-        return ent[1] if ent else ""
+        if ent and ent[1]:
+            return ent[1][0]
+        return ""
     except Exception:
         return ""
 
