@@ -254,7 +254,7 @@ def make_openai(timeout=120, async_=False, base=None, key=None):
         b, k, _ = get_active()
         base = base or b
         key = key if key is not None else k
-    px = get_llm_proxy()
+    px = get_llm_proxy(base, key)
     if px:
         try:
             import httpx as _hx
