@@ -334,3 +334,37 @@ def persist(base: str, api_key: str, model: str) -> None:
         except Exception:
             pass
     logger.info("backend active: %s model=%s", base, model)
+
+
+def current_proxy():
+    """Recorded proxy url or '' (direct mode). No network."""
+    try:
+        b, k, _ = get_active()
+        if _is_local_base(b):
+            return ""
+        ent = _PX_CACHE.get(b + "|" + (k[-8:] if k else ""))
+        return ent[1] if ent else ""
+    except Exception:
+        return ""
+
+
+def proxy_alive_now(timeout: int = 4) -> bool:
+    """True if recorded proxy still answers (or no proxy recorded)."""
+    try:
+        b, k, _ = get_active()
+        if _is_local_base(b):
+            return True
+        px = current_proxy()
+        if not px:
+            return True
+        return _egress_code(b, k, px, timeout=timeout) is not None
+    except Exception:
+        return True
+
+
+def drop_proxy_cache() -> None:
+    """Force fresh proxy hunt on next call."""
+    try:
+        _PX_CACHE.clear()
+    except Exception:
+        pass

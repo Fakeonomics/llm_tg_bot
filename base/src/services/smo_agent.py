@@ -606,6 +606,12 @@ def run_task(text: str, uid: int, cid: int, save_on: bool = True,
             _tls.cid = cid
         except Exception:
             pass
+        try:
+            if not _lc.proxy_alive_now():
+                _lc.drop_proxy_cache()
+                refresh_llm()
+        except Exception:
+            pass
         if save_on:
             agent, key = _get_agent(uid, cid)
         else:
@@ -628,7 +634,26 @@ def run_task(text: str, uid: int, cid: int, save_on: bool = True,
                 fast = _try_fast(text, tc2)
                 if fast:
                     return final_clean(fast)
-            out = agent.run(prompt)
+            try:
+                out = agent.run(prompt)
+            except Exception as e:
+                s = str(e).lower()
+                if ("connect" in s or "timeout" in s or "timed out" in s
+                        or "451" in s or "forbidden" in s
+                        or "remoteprotocol" in s or "network" in s):
+                    # Flaky egress proxy: fresh hunt + rebuild + one retry.
+                    _lc.drop_proxy_cache()
+                    refresh_llm()
+                    if save_on:
+                        agent, _ = _get_agent(uid, cid)
+                    else:
+                        agent = CodeAgent(
+                            tools=_TOOLS, model=_MODEL,
+                            additional_authorized_imports=_EXTRA_IMPORTS,
+                            max_steps=MAX_STEPS, verbosity_level=0)
+                    out = agent.run(prompt)
+                else:
+                    raise
         finally:
             _get_sink_var().set(None)
             _sem.release()
