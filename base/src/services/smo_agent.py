@@ -531,8 +531,9 @@ def _try_fast(text: str, transcript: str):
     1 generation instead of up to MAX_STEPS slow agent turns.
     """
     try:
+        from openai import OpenAI as _OOAI
         _b, _k, _m = _lc.get_active()
-        cli = _lc.make_openai(timeout=120, base=_b, key=_k)
+        cli = _OOAI(base_url=_b, api_key=_k, timeout=120)
         sys = ("Answer briefly in the user's language. STRICT GitHub "
                "markdown format "
                "in every answer: # headings, **bold**, *italic*, `code`, "
@@ -749,8 +750,9 @@ def run_lfm_task(text: str, save_on: bool, transcript: str,
     """Native LFM tool loop (docs-driven): tools JSON in system, parse
     <|tool_call_start|>, `tool` role replies. temperature 0.2 per docs."""
     import json as _json
+    from openai import OpenAI as _OOAI2
     _bb, _kk, _mm = _lc.get_active()
-    client = _lc.make_openai(timeout=300, base=_bb, key=_kk)
+    client = _OOAI2(base_url=_bb, api_key=_kk, timeout=300)
     tools = _lfm_schema()
     sys = ("You are a helpful assistant. Respond in the user's language. "
            "Rich format (STRICT GitHub markdown, every answer): # headings, "
