@@ -105,6 +105,50 @@ def _patch_code_parser():
 if _SMO_OK:
     _patch_code_parser()
 
+
+def _patch_usage():
+    """Tolerate missing `usage` in completions (NVIDIA reasoning models
+    omit it) — smolagents crashes on response.usage.prompt_tokens."""
+    try:
+        from smolagents.models import OpenAIModel as _OM
+    except Exception:
+        return
+    if getattr(_OM.create_client, "_usage_patched", False):
+        return
+    _orig = _OM.create_client
+
+    def _patched(self):
+        cli = _orig(self)
+        try:
+            import functools as _ft
+
+            inner = cli.chat.completions.create
+
+            @_ft.wraps(inner)
+            def _create(*a, **k):
+                resp = inner(*a, **k)
+                try:
+                    if getattr(resp, "usage", None) is None:
+                        import types as _ts
+                        resp.usage = _ts.SimpleNamespace(
+                            prompt_tokens=0, completion_tokens=0,
+                            total_tokens=0)
+                except Exception:
+                    pass
+                return resp
+
+            cli.chat.completions.create = _create
+        except Exception:
+            pass
+        return cli
+
+    _patched._usage_patched = True
+    _OM.create_client = _patched
+
+
+if _SMO_OK:
+    _patch_usage()
+
 LLAMA_BASE_URL, _LLM_KEY, _LLM_MODEL = _lc.get_active()
 
 
