@@ -203,7 +203,7 @@ async def update_initial_model(provider):
             url = before_v1 + "/v1beta/models"
             params = {"key": api}
             async with httpx.AsyncClient(**client_config) as client:
-                response = await client.get(url, params=params)
+                response = await client.get(url, params=params, timeout=15)
 
             original_models = response.json()
             if original_models.get("error"):
@@ -227,6 +227,7 @@ async def update_initial_model(provider):
                 response = await client.get(
                     endpoint_models_url,
                     headers=headers,
+                    timeout=15,
                 )
             models = response.json()
             if models.get("error"):
@@ -242,8 +243,8 @@ async def update_initial_model(provider):
         models_id = list(set_models)
         # print(models_id)
         return models_id
-    except Exception:
-        traceback.print_exc()
+    except Exception as e:
+        logger.warning("initial model fetch failed: %s", type(e).__name__)
         return []
 
 def safe_get(data, *keys, default=None):
