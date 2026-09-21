@@ -1760,4 +1760,4 @@ if __name__ == '__main__':
     else:
         application.run_polling(timeout=poll_time_out,
                                  allowed_updates=Update.ALL_TYPES,
-                                 drop_pending_updates=True)
+                                 drop_pending_updates=False)
