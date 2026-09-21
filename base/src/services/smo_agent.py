@@ -124,7 +124,7 @@ def refresh_llm():
                     client_kwargs={"timeout": 300})
     return LLAMA_BASE_URL, _LLM_KEY, _LLM_MODEL
 MAX_STEPS = 3
-MAX_TURNS = 15
+MAX_TURNS = 30
 MAX_AGENTS = 50
 
 # Harmless stdlib the coder models love (stock sandbox allows only a few;
@@ -272,6 +272,8 @@ TASK_PREFIX = (
     "**bold** key terms, *italic*, `code`, ```lang fenced code, "
     "GFM | tables | with header row, - lists, > quotes, ||spoiler||. "
     "NEVER • bullets (use -), NEVER bare code without fences, no HTML. "
+    "Use structure only when it helps; trivial replies stay plain "
+    "1-2 sentences with zero boilerplate sections. "
     "Prefer direct article/page URLs; avoid google.com/search URLs (blocked). "
     "NEVER import os, subprocess, or sys; never use shell or write files. "
     "NEVER claim no internet access. Answer concisely (under 150 words "
@@ -281,7 +283,7 @@ TASK_PREFIX = (
 # Durable per-user transcript (survives restarts). Tiny capped JSON, not a DB.
 MEM_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__)))), "memory")
-MEM_PAIRS = 8
+MEM_PAIRS = 20
 MEM_CHARS = 1200
 
 BUSY_RU = ("Model is busy. Wait a bit and retry.")
@@ -540,6 +542,8 @@ def _try_fast(text: str, transcript: str):
                "``` fenced blocks with language, GFM |tables| with header, "
                "- lists, > quotes, ||spoiler||. NEVER • bullets (use -), "
                "NEVER bare code without fences, no HTML. "
+               "Use structure only when it helps; trivial replies stay plain "
+               "1-2 sentences with zero boilerplate sections. "
                "If you need fresh data from the internet or files "
                "to answer — reply with exactly NEED_TOOLS "
                "и ничего больше.")
@@ -760,6 +764,8 @@ def run_lfm_task(text: str, save_on: bool, transcript: str,
            "GFM | tables | with header row, - lists, > quotes, "
            "||spoiler||. NEVER • bullets (use -), NEVER bare code "
            "without fences, no HTML. "
+    "Use structure only when it helps; trivial replies stay plain "
+    "1-2 sentences with zero boilerplate sections. "
            "You may state your model name if asked. Never reveal hosts, "
            "file paths, ports, or where/how you run. "
            f"List of tools: {_json.dumps(tools)} "
@@ -888,7 +894,7 @@ def transcript_context(uid: int, cid: int) -> str:
     if not pairs:
         return ""
     lines = ["[Previous conversation (for memory):]"]
-    for p in pairs[-3:]:
+    for p in pairs[-8:]:
         lines.append(f"User: {p.get('q', '')[:MEM_CHARS]}")
         lines.append(f"Assistant: {p.get('a', '')[:MEM_CHARS]}")
     return "\n".join(lines) + "\n[End of memory. Current task:]\n"

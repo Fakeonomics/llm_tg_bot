@@ -939,7 +939,7 @@ async def _guest_answer(context, qid: str, text: str, uid: int,
             from src.services import smo_agent as _smo0
             import asyncio as _aio0
             final0 = await _aio0.to_thread(
-                _smo0.run_task, prompt, uid, 0, False, 120, None)
+                _smo0.run_task, prompt, uid, 0, True, 120, None)
             from src.services.agent_loop import deep_scrub as _sc0
             final0 = clean_answer(_sc0(final0 or "")) or "failed to answer."
             if final0.count("```") % 2 == 1:
@@ -964,7 +964,7 @@ async def _guest_answer(context, qid: str, text: str, uid: int,
 
     async def _run2():
         return await asyncio.to_thread(
-            _smog.run_task, prompt, uid, 0, False, 180, sink)
+            _smog.run_task, prompt, uid, 0, True, 180, sink)
 
     async def _post2(t):
         return mid
