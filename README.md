@@ -58,6 +58,15 @@ tgbot logs      # live log
 
 Requirements: `python3`, a model on an OpenAI-compatible API (LM Studio / llama-server / hosted). Optional OCR: `tesseract`.
 
+## Usage
+
+- **Private**: just write. Files and photos accepted.
+- **Groups**: mention `@bot` or reply to its message.
+- **Guest mode**: tag the bot even where it is not a member (needs Guest Mode ON in BotFather).
+- **Inline**: `@bot query` in any chat.
+- **Stop**: send `stop`/`cancel` or tap the Stop button under the working message.
+- Research questions may take up to 5 tool steps; simple ones answer in 1 generation.
+
 ## Configuration
 
 `.env` files (never committed, see `configs/*.example`):

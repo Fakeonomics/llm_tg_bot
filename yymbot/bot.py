@@ -1533,14 +1533,13 @@ async def info(update, context):
     )
     await delete_message(update, context, [message.message_id, user_message_id])
 
-@decorators.PrintMessage
 @decorators.GroupAuthorization
 @decorators.Authorization
 async def start(update, context): # 当用户输入/start时，返回文本
-    print(f"DBG start from={update.effective_user.id}", flush=True)
     _, _, _, _, _, _, _, _, convo_id, _, _, _ = await GetMesageInfo(update, context)
     user = update.effective_user
     update_language_status("English", chat_id=convo_id)
+    bname = getattr(getattr(context, "bot", None), "username", "") or "this bot"
     message = (
         f"Hi `{user.username}`! I am an AI assistant on a local model.\n"
         "Send me a task or a file and I will handle it.\n\n"
@@ -1553,7 +1552,10 @@ async def start(update, context): # 当用户输入/start时，返回文本
         "/setmodel <id> — set model manually\n"
         "/setcd [private group] — anti-spam cooldowns\n\n"
         "Groups & guests\n"
-        "Mention me in any group or summon me as guest — I reply right there.\n\n"
+        f"Mention me (@{bname}) in any group or reply to my message — "
+        "I answer right there.\n"
+        "Guest mode: tag me even in chats where I'm not a member.\n"
+        f"Inline: type @{bname} + query in any chat.\n\n"
         "Notes\n"
         "- Send stop or cancel to abort a running task.\n"
         "- Cooldown 15s (private) / 20s (groups) between answers.\n"

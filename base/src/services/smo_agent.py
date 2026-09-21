@@ -167,7 +167,7 @@ def refresh_llm():
                     api_base=LLAMA_BASE_URL, api_key=_LLM_KEY,
                     client_kwargs={"timeout": 300})
     return LLAMA_BASE_URL, _LLM_KEY, _LLM_MODEL
-MAX_STEPS = 3
+MAX_STEPS = 5
 MAX_TURNS = 30
 MAX_AGENTS = 50
 

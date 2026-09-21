@@ -365,6 +365,22 @@ async def agent_turn(msg, context, user_text: str, uid: int, cid,
         raise _StopBusy()
     await lk.acquire()
     draft_id = _rnd.randint(1, 2**31 - 1)
+    cancel_key = f"{int(uid)}:{cid}"
+    stop_msg_id = 0
+    try:
+        CANCEL[cancel_key] = (cancel_ev, int(uid))
+    except Exception:
+        pass
+    try:
+        from telegram import InlineKeyboardButton as _SB
+        from telegram import InlineKeyboardMarkup as _SM
+        _sm = await msg.reply_text(
+            "Working (tap Stop or send stop)",
+            reply_markup=_SM([[_SB("Stop",
+                                   callback_data="cancel:" + cancel_key)]]))
+        stop_msg_id = getattr(_sm, "message_id", 0) or 0
+    except Exception:
+        pass
 
     async def _run():
         return await _aio.to_thread(
@@ -465,6 +481,24 @@ async def agent_turn(msg, context, user_text: str, uid: int, cid,
         except Exception:
             pass
         try:
+            from src.services.agent_loop import is_broken as _brk2
+            if (out or "").strip() and _brk2(out):
+                from src.services import llm_config as _lcJ
+                _bj, _kj, _mj = _lcJ.get_active()
+                from openai import AsyncOpenAI as _OAIJ
+                _cj = _OAIJ(base_url=_bj, api_key=_kj, timeout=120)
+                _rj = await _cj.chat.completions.create(
+                    model=_mj or "local",
+                    messages=[{"role": "system", "content":
+                               "Answer in 1-3 sentences in the user's "
+                               "language. Plain text only: no tools, "
+                               "no code, no scaffolding."},
+                              {"role": "user", "content": user_text}],
+                    temperature=0.2)
+                out = (_rj.choices[0].message.content or "").strip() or ""
+        except Exception:
+            pass
+        try:
             out = _smo.final_clean(out or "")
         except Exception:
             pass
@@ -477,6 +511,16 @@ async def agent_turn(msg, context, user_text: str, uid: int, cid,
         return out
     finally:
         RUNNING.pop(int(cid), None)
+        try:
+            CANCEL.pop(cancel_key, None)
+        except Exception:
+            pass
+        try:
+            if stop_msg_id:
+                await context.bot.delete_message(
+                    chat_id=msg.chat.id, message_id=stop_msg_id)
+        except Exception:
+            pass
         try:
             lk.release()
         except Exception:
