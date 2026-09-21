@@ -206,7 +206,7 @@ async def direct_answer(msg, text: str):
         import os as _os
         from src.services import llm_config as _lcD
         _bd, _kd, _md = _lcD.get_active()
-        cli = _OAI(base_url=_bd, api_key=_kd, timeout=60)
+        cli = _lcD.make_openai(timeout=60, base=_bd, key=_kd)
         r = await cli.chat.completions.create(
             model=_md or "local",
             messages=[{"role": "system",
@@ -439,7 +439,8 @@ async def agent_turn(msg, context, user_text: str, uid: int, cid,
                 import os as _os
                 from src.services import llm_config as _lcF
                 _bf, _kf, _mf = _lcF.get_active()
-                _cli = _OAI(base_url=_bf, api_key=_kf, timeout=120)
+                _cli = _lcF.make_openai(timeout=120, async_=True,
+                                        base=_bf, key=_kf)
                 _r = await _cli.chat.completions.create(
                     model=_mf or "local",
                     messages=[{"role": "system", "content":
@@ -452,9 +453,8 @@ async def agent_turn(msg, context, user_text: str, uid: int, cid,
                     from src.services import llm_config as _lcX
                     ex = _lcX.get_extra()
                     if ex:
-                        from openai import AsyncOpenAI as _OX
-                        _cx = _OX(base_url=ex[0], api_key=ex[1],
-                                  timeout=120)
+                        _cx = _lcX.make_openai(timeout=120, async_=True,
+                                               base=ex[0], key=ex[1])
                         _rx = await _cx.chat.completions.create(
                             model=ex[2],
                             messages=[{"role": "user",
@@ -562,7 +562,8 @@ async def _vision_answer(path: str, caption: str):
         b64 = _b64.b64encode(raw).decode()
         from src.services import llm_config as _lcV
         _bv, _kv, _mv = _lcV.get_active()
-        client = _OAI(base_url=_bv or base, api_key=_kv, timeout=120.0)
+        client = _lcV.make_openai(timeout=120, async_=True,
+                                  base=_bv or base, key=_kv)
         r = await client.chat.completions.create(
             model=_mv or "local",
             messages=[
