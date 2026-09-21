@@ -753,6 +753,10 @@ def final_clean(text: str) -> str:
         t = _re.sub(r"<code>(.*?)</code>", r"```\1```", t,
                     flags=_re.DOTALL | _re.IGNORECASE)
     t = _re.sub(r"</?code>", "", t).strip()
+    # full-line tool-call statements never reach the user
+    t = _re.sub(r"(?m)^[ \t]*(?:\w+\s*=\s*)?(?:web_search|fetch_page)\s*\(.*$",
+                "", t).strip()
+    t = _re.sub(r"\n{3,}", "\n\n", t).strip()
     lines = t.splitlines()
     if (len(lines) > 1 and len(lines[0]) < 300
             and _re.match(r"\s*thought[^\n:]{0,4}:", lines[0],
