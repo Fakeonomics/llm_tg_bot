@@ -721,7 +721,11 @@ async def smo_private(update, context):
     except Exception:
         return
     if not (final or "").strip():
-        return
+        try:
+            await msg.reply_text("[model backend unreachable, try later]")
+        except Exception:
+            pass
+        raise ApplicationHandlerStop()
     try:
         await send_final(msg, final)
     except Exception:
@@ -810,7 +814,11 @@ async def smo_group_mention(update, context):
     except Exception:
         return
     if not (final or "").strip():
-        return
+        try:
+            await msg.reply_text("[model backend unreachable, try later]")
+        except Exception:
+            pass
+        raise ApplicationHandlerStop()
     try:
         await send_final(msg, final)
     except Exception:
