@@ -1,0 +1,6 @@
+[submodule "aient/core"]
+	path = aient/core
+	url = https://github.com/yym68686/uni-api-core
+[submodule "aient/architext"]
+	path = aient/architext
+	url = https://github.com/yym68686/architext.git

@@ -1,0 +1,129 @@
+#!/bin/sh
+# tgbot [start|stop|restart|status|logs] — launch the Telegram agent bot.
+# Auto-finds the model port, remembers it in .llama-port. Needs no sudo.
+set -u
+HERE="$(cd "$(dirname "$0")/.." && pwd)"
+PIDF="$HERE/bot.pid"
+LOG="$HERE/yymbot.log"
+PORTF="$HERE/.llama-port"
+ENGINE="${TGBOT_ENGINE:-yym}"
+CANDIDATE_PORTS="8080 1234 11434 8000"
+cmd="${1:-start}"
+[ "$cmd" = "--no-zapret" ] && cmd="start"
+
+# Proxy env breaks httpx.
+unset ALL_PROXY all_proxy HTTP_PROXY http_proxy HTTPS_PROXY https_proxy \
+    SOCKS_PROXY socks_proxy 2>/dev/null || true
+
+is_running() {
+    [ -f "$PIDF" ] || return 1
+    kill -0 "$(cat "$PIDF")" 2>/dev/null
+}
+
+resolve_llama() {
+    LLAMA_PORT=""
+    if [ -f "$PORTF" ]; then
+        p=$(tr -cd '0-9' < "$PORTF" 2>/dev/null)
+        code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
+            "http://localhost:$p/v1/models" 2>/dev/null || echo 000)
+        [ "$code" = "200" ] && LLAMA_PORT="$p"
+    fi
+    if [ -z "$LLAMA_PORT" ]; then
+        for p in $CANDIDATE_PORTS; do
+            code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
+                "http://localhost:$p/v1/models" 2>/dev/null || echo 000)
+            if [ "$code" = "200" ]; then
+                LLAMA_PORT="$p"
+                echo "$p" > "$PORTF"
+                break
+            fi
+        done
+    fi
+    if [ -z "$LLAMA_PORT" ]; then
+        echo "[tgbot] WARNING: no model found (tried $CANDIDATE_PORTS)"
+        LLAMA_PORT=8080
+    else
+        echo "[tgbot] model on :$LLAMA_PORT"
+    fi
+    export LLAMA_BASE_URL="http://localhost:$LLAMA_PORT/v1"
+    export BASE_URL="http://localhost:$LLAMA_PORT/v1/chat/completions"
+}
+
+do_start() {
+    if is_running; then
+        echo "[tgbot] already running (pid $(cat "$PIDF"))"
+        return 0
+    fi
+    resolve_llama
+    if [ "$ENGINE" = "old" ]; then
+        if ! grep -q "^BOT_TOKEN=[0-9]*:.." "$HERE/base/.env" 2>/dev/null; then
+            echo "[tgbot] BOT_TOKEN missing in base/.env"; exit 1
+        fi
+        PY="$HERE/botenv/bin/python"
+        WD="$HERE/base"
+        ENTRY="bot.py"
+        export PYTHONPATH="$HERE/base:${PYTHONPATH:-}"
+    else
+        PY="$HERE/yymbot/yymenv/bin/python"
+        WD="$HERE/yymbot"
+        ENTRY="bot.py"
+        export PYTHONPATH="$HERE/base:${PYTHONPATH:-}"
+    fi
+    cd "$WD" || exit 1
+    setsid nohup "$PY" "$ENTRY" >>"$LOG" 2>&1 < /dev/null &
+    echo "$!" > "$PIDF"
+    sleep 8
+    if is_running; then
+        if grep -q "Application started" "$LOG" 2>/dev/null; then
+            echo "[tgbot] started (pid $(cat "$PIDF"), engine $ENGINE)"
+        else
+            echo "[tgbot] process alive but not confirmed — see: tgbot logs"
+        fi
+    else
+        echo "[tgbot] FAILED to start — see: tgbot logs"
+        rm -f "$PIDF"
+        exit 1
+    fi
+}
+
+do_stop() {
+    if ! is_running; then
+        echo "[tgbot] not running"
+        rm -f "$PIDF"
+        return 0
+    fi
+    pid=$(cat "$PIDF")
+    echo "[tgbot] stopping $pid..."
+    kill "$pid" 2>/dev/null
+    i=0
+    while kill -0 "$pid" 2>/dev/null && [ "$i" -lt 10 ]; do
+        sleep 1
+        i=$((i + 1))
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+        kill -9 "$pid" 2>/dev/null
+        echo "[tgbot] killed -9"
+    else
+        echo "[tgbot] stopped"
+    fi
+    rm -f "$PIDF"
+}
+
+case "$cmd" in
+    start) do_start;;
+    stop) do_stop;;
+    restart) do_stop; sleep 2; do_start;;
+    status)
+        if is_running; then
+            echo "[tgbot] running (pid $(cat "$PIDF"))"
+        else
+            echo "[tgbot] down"
+        fi
+        resolve_llama
+        code=$(curl -s --max-time 8 -o /dev/null -w "%{http_code}" \
+            https://api.telegram.org 2>/dev/null || echo 000)
+        echo "[tgbot] api.telegram.org -> $code"
+        ;;
+    logs) tail -f "$LOG";;
+    *) echo "usage: tgbot [start|stop|restart|status|logs]"; exit 1;;
+esac

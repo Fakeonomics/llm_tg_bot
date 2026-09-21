@@ -1,0 +1,1 @@
+FROM yym68686/chatgpt:latest

@@ -1,0 +1,12 @@
+FROM python:3.11 AS builder
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY pyproject.toml uv.lock ./
+RUN uv pip install -r pyproject.toml --system --no-cache
+
+FROM python:3.11-slim-bookworm
+EXPOSE 8000
+WORKDIR /home
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY . .
+ENTRYPOINT ["python", "-u", "/home/bot.py"]

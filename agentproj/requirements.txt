@@ -1,0 +1,5 @@
+python-telegram-bot==21.9
+google-genai>=1.0.0
+ollama>=0.3.0
+duckduckgo-search>=6.0.0
+python-dotenv==1.0.1

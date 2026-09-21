@@ -1,0 +1,25 @@
+# Environment & secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Docker
+*.log
+
+# IDE
+.idea/
+.vscode/
+
+# Claude
+.claude/
+
+# Local deployment notes
+ollama.md

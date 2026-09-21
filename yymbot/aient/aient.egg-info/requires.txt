@@ -1,0 +1,14 @@
+beautifulsoup4>=4.13.4
+chardet>=5.2.0
+duckduckgo-search==5.3.1
+fake-useragent>=2.2.0
+fastapi>=0.116.1
+html2text>=2025.4.15
+httpx>=0.28.1
+httpx-socks>=0.10.1
+lxml-html-clean>=0.4.2
+msgspec>=0.19.0
+pdfminer-six==20240706
+pillow>=11.3.0
+pytz>=2025.2
+requests>=2.32.4

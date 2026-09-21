@@ -1,0 +1,20 @@
+# venvs (recreated by install.sh)
+yymbot/yymenv/
+botenv/
+# secrets — copy from .example, never commit
+.env
+# local machine state
+.llama-port
+# runtime state
+*.log
+*.pid
+memory/
+inbox/
+__pycache__/
+*.pyc
+*.pyo
+# zapret binaries (see README, downloaded separately)
+zapret/extracted/
+zapret/*.tar.gz
+zapret/*.zip
+/tmp/

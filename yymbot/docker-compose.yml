@@ -1,0 +1,13 @@
+version: "3.5"
+services:
+  chatgptbot:
+    container_name: chatgptbot
+    image: yym68686/chatgpt:latest
+    environment:
+      - BOT_TOKEN=
+      - BASE_URL=
+      - API_KEY=
+    volumes:
+      - ./user_configs:/home/user_configs
+    ports:
+      - 80:8080

@@ -1,0 +1,17 @@
+[Unit]
+Description=tgbot-agent (Telegram AI bot)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tgbot
+WorkingDirectory=/opt/tgbot-agent/yymbot
+Environment=PYTHONPATH=/opt/tgbot-agent/base
+Environment=LLM_BASE_URL=http://localhost:8080/v1
+ExecStart=/opt/tgbot-agent/yymbot/yymenv/bin/python bot.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
