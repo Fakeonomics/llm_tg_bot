@@ -121,7 +121,7 @@ def refresh_llm():
         from smolagents import OpenAIServerModel as _M
         _MODEL = _M(model_id=_LLM_MODEL or "agent",
                     api_base=LLAMA_BASE_URL, api_key=_LLM_KEY,
-                    client_kwargs={"timeout": 300})
+                    client_kwargs=_lc.smolagents_kwargs(300))
     return LLAMA_BASE_URL, _LLM_KEY, _LLM_MODEL
 MAX_STEPS = 3
 MAX_TURNS = 15
@@ -473,7 +473,7 @@ if _SMO_OK:
     _MODEL = OpenAIServerModel(
         model_id=_LLM_MODEL or "agent", api_base=LLAMA_BASE_URL,
         api_key=_LLM_KEY,
-        client_kwargs={"timeout": 300})
+        client_kwargs=_lc.smolagents_kwargs(300))
 else:  # pragma: no cover
     _TOOLS, _MODEL = [], None
 

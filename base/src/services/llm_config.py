@@ -275,6 +275,19 @@ def make_openai(timeout=120, async_=False, base=None, key=None):
     return _SO2(base_url=base, api_key=key, timeout=timeout)
 
 
+def smolagents_kwargs(timeout=300) -> dict:
+    """client_kwargs for OpenAIServerModel (proxy-aware on server)."""
+    try:
+        b, k, _ = get_active()
+        px = get_llm_proxy(b, k)
+        if px:
+            import httpx as _hx
+            return {"http_client": _hx.Client(proxy=px, timeout=timeout)}
+    except Exception as e:
+        logger.debug("smolagents proxy unset, direct: %s", e)
+    return {"timeout": timeout}
+
+
 def persist(base: str, api_key: str, model: str) -> None:
     """Write backend to yymbot/.env + live environ (no restart needed).
 
