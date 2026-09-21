@@ -464,6 +464,10 @@ async def agent_turn(msg, context, user_text: str, uid: int, cid,
                                 or "").strip() or out)
         except Exception:
             pass
+        try:
+            out = _smo.final_clean(out or "")
+        except Exception:
+            pass
         out = _scrub(out or "")
         if save_on and out.strip():
             try:

@@ -67,6 +67,15 @@ def is_broken(text: str) -> bool:
         return True
     if "<|tool_call_start|>" in t and "<|tool_call_end|>" in t:
         return True
+    if "<|tool" in t:
+        return True
+    if "final_answer(" in t:
+        return True
+    if "web_search(" in t or "fetch_page(" in t:
+        return True
+    import re as _reB
+    if _reB.match(r"\s*thought[ыs]?\s*:", t, _reB.IGNORECASE):
+        return True
     return False
 
 

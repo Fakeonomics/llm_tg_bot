@@ -942,6 +942,10 @@ async def _guest_answer(context, qid: str, text: str, uid: int,
                 _smo0.run_task, prompt, uid, 0, True, 120, None)
             from src.services.agent_loop import deep_scrub as _sc0
             final0 = clean_answer(_sc0(final0 or "")) or "failed to answer."
+            try:
+                final0 = _smo0.final_clean(final0)
+            except Exception:
+                pass
             if final0.strip() != "failed to answer.":
                 try:
                     _smo0.remember(uid, 0, text, final0)
@@ -1001,6 +1005,10 @@ async def _guest_answer(context, qid: str, text: str, uid: int,
     except Exception:
         pass
     final = clean_answer(final or "")
+    try:
+        final = _smog.final_clean(final)
+    except Exception:
+        pass
     if not final.strip():
         final = "failed to answer."
     else:
