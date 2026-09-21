@@ -94,7 +94,13 @@ def list_models(base: str = "", api_key: str = "",
     url = base + "/models"
     try:
         req = urllib.request.Request(url, headers=_headers(api_key))
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        px = get_llm_proxy(base, api_key)
+        if px:
+            opener = urllib.request.build_opener(
+                urllib.request.ProxyHandler({"http": px, "https": px}))
+        else:
+            opener = urllib.request.build_opener()
+        with opener.open(req, timeout=timeout) as r:
             if getattr(r, "status", 200) != 200:
                 raise RuntimeError(f"HTTP {getattr(r, 'status', '?')}")
             d = json.loads(r.read(200000).decode("utf-8", "replace"))
